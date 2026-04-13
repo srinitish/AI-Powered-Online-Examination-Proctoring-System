@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ExamGuard — Proctoring Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+    :root {
+      --bg:       #0b0e14;
+      --surface:  #111620;
+      --border:   #1e2535;
+      --accent:   #00e5ff;
+      --danger:   #ff3d5a;
+      --ok:       #00e676;
+      --warn:     #ffab00;
+      --text:     #cdd6f4;
+      --muted:    #5a6580;
+      --font-ui:  'Sora', sans-serif;
+      --font-mono:'JetBrains Mono', monospace;
+    }
+ 
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+ 
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -.5px;
+      color: #fff;
+    }
+    .logo span { color: var(--accent); }
+    .live-badge {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .75rem; font-family: var(--font-mono);
+      color: var(--ok); text-transform: uppercase; letter-spacing: 1px;
+    }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--ok);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .4; transform: scale(.7); }
+    }
+ 
+    /* ── Layout ── */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      grid-template-rows: auto 1fr;
+      gap: 20px;
+      padding: 24px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+ 
+    /* ── Video panel ── */
+    .video-panel {
+      grid-row: 1 / 3;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-title {
+      padding: 14px 20px;
+      font-size: .7rem;
+      font-family: var(--font-mono);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    #stream {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      display: block;
+      background: #000;
+    }
+    .video-footer {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .8rem;
+      color: var(--muted);
+      font-family: var(--font-mono);
+    }
+    #status-label {
+      margin-left: auto;
+      font-weight: 700;
+      font-size: .85rem;
+      transition: color .3s;
+    }
+ 
+    /* ── Stat cards ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .stat-card .label {
+      font-size: .65rem;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: #fff;
+    }
+    .stat-card .value.danger { color: var(--danger); }
+    .stat-card .value.ok     { color: var(--ok); }
+    .stat-card .value.warn   { color: var(--warn); }
+ 
+    /* ── Violation log ── */
+    .log-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .log-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 320px;
+    }
+    .log-body::-webkit-scrollbar { width: 4px; }
+    .log-body::-webkit-scrollbar-track { background: transparent; }
+    .log-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+ 
+    .log-entry {
+      background: #0f1420;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--danger);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: .78rem;
+      font-family: var(--font-mono);
+      animation: slideIn .3s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .log-entry .log-time { color: var(--muted); font-size: .7rem; margin-bottom: 3px; }
+    .log-entry .log-reason { color: var(--danger); }
+ 
+    .empty-log {
+      color: var(--muted);
+      font-size: .8rem;
+      font-family: var(--font-mono);
+      text-align: center;
+      margin: auto;
+      padding: 24px;
+    }
+ 
+    /* ── Reset button ── */
+    .btn-reset {
+      margin: 12px;
+      padding: 10px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-reset:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+ 
+    /* ── Malpractice flash overlay ── */
+    #flash {
+      position: fixed; inset: 0;
+      pointer-events: none;
+      border: 4px solid var(--danger);
+      border-radius: 0;
+      opacity: 0;
+      transition: opacity .15s;
+      z-index: 999;
+    }
+    #flash.active { opacity: 1; }
+  </style>
+</head>
+<body>
+ 
+<div id="flash"></div>
+ 
+<header>
+  <div class="logo">Exam<span>Guard</span></div>
+  <div class="live-badge"><div class="live-dot"></div> Live Monitoring</div>
+</header>
+ 
+<main>
+  <!-- Video feed -->
+  <section class="video-panel">
+    <div class="panel-title">📷 Camera Feed</div>
+    <img id="stream" src="/video" alt="Live feed"/>
+    <div class="video-footer">
+      <span id="clock">--:--:--</span>
+      <span id="status-label" style="color: var(--ok)">Fair</span>
+    </div>
+  </section>
+ 
+  <!-- Stat cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">Violations</div>
+      <div class="value danger" id="mal-count">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Tab Switches</div>
+      <div class="value warn" id="tab-count">0</div>
+    </div>
+    <div class="stat-card" style="grid-column: 1/-1;">
+      <div class="label">Current Status</div>
+      <div class="value ok" id="status-card">Waiting</div>
+    </div>
+  </div>
+ 
+  <!-- Violation log -->
+  <section class="log-panel">
+    <div class="panel-title">⚠ Violation Log</div>
+    <div class="log-body" id="log-body">
+      <div class="empty-log" id="empty-msg">No violations recorded.</div>
+    </div>
+    <button class="btn-reset" onclick="resetSession()">↺ Reset Session</button>
+  </section>
+</main>
+ 
+<script>
+  let knownViolations = 0;
+ 
+  // Clock
+  setInterval(() => {
+    document.getElementById("clock").textContent =
+      new Date().toLocaleTimeString("en-GB");
+  }, 1000);
+ 
+  // Poll /status every 1.5s
+  async function pollStatus() {
+    try {
+      const res  = await fetch("/status");
+      const data = await res.json();
+ 
+      const mal  = data.mal_count    ?? 0;
+      const tabs = data.tab_switches ?? 0;
+      const st   = data.status       ?? "Waiting";
+      const log  = data.violation_log ?? [];
+ 
+      document.getElementById("mal-count").textContent  = mal;
+      document.getElementById("tab-count").textContent  = tabs;
+      document.getElementById("status-label").textContent = st;
+      document.getElementById("status-card").textContent  = st;
+ 
+      const isMal = st === "Malpractice Detected";
+      document.getElementById("status-label").style.color =
+        isMal ? "var(--danger)" : "var(--ok)";
+      document.getElementById("status-card").className =
+        "value " + (isMal ? "danger" : "ok");
+ 
+      // Flash border on new violation
+      if (isMal) {
+        document.getElementById("flash").classList.add("active");
+        setTimeout(() => document.getElementById("flash").classList.remove("active"), 400);
+      }
+ 
+      // Render new log entries
+      if (log.length > knownViolations) {
+        const body = document.getElementById("log-body");
+        document.getElementById("empty-msg")?.remove();
+ 
+        for (let i = knownViolations; i < log.length; i++) {
+          const v   = log[i];
+          const div = document.createElement("div");
+          div.className = "log-entry";
+          div.innerHTML = `
+            <div class="log-time">#${v.id} · ${v.time}</div>
+            <div class="log-reason">${v.reason}</div>
+          `;
+          body.prepend(div);
+        }
+        knownViolations = log.length;
+      }
+    } catch(e) {
+      console.warn("Status poll failed:", e);
+    }
+  }
+ 
+  setInterval(pollStatus, 1500);
+  pollStatus();
+ 
+  // Tab-switch detection
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      fetch("/tab_violation", { method: "POST" })
+        .then(r => r.json())
+        .then(d => {
+          document.getElementById("tab-count").textContent = d.tab_switches;
+        });
+    }
+  });
+ 
+  // Reset session
+  async function resetSession() {
+    if (!confirm("Reset all violation data for this session?")) return;
+    await fetch("/reset", { method: "POST" });
+    knownViolations = 0;
+    document.getElementById("mal-count").textContent  = "0";
+    document.getElementById("tab-count").textContent  = "0";
+    document.getElementById("status-card").textContent = "Waiting";
+    document.getElementById("status-label").textContent = "Waiting";
+    const body = document.getElementById("log-body");
+    body.innerHTML = '<div class="empty-log" id="empty-msg">No violations recorded.</div>';
+  }
+</script>
+</body>
+</html>
+ 
