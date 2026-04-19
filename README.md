@@ -1,6 +1,6 @@
 # 🎓 AI-Powered Online Examination Proctoring System (ExamGuard)
 
-![ExamGuard Demo](docs/demo.png)
+![ExamGuard Demo](demo.png)
 
 An **AI-based online exam monitoring system** that detects potential malpractice during remote examinations using **Computer Vision and YOLOv8 object detection**.  
 The system streams the webcam feed, analyzes frames in real time, detects suspicious objects or behavior, and logs violations with timestamps.
