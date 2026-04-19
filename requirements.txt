@@ -1,4 +1,6 @@
-flask>=3.0
-opencv-python>=4.9
-ultralytics>=8.2
-cvzone>=1.6
+ultralytics
+opencv-python
+cvzone
+streamlit
+pandas
+numpy
