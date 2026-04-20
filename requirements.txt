@@ -1,6 +1,11 @@
 ultralytics
 opencv-python
 cvzone
-streamlit
 pandas
+fastapi
+uvicorn
+opencv-python
 numpy
+streamlit
+ultralytics
+pillow
